@@ -110,3 +110,100 @@ Select * from titles
 --add foreign keys
 ALTER TABLE dept_emp 
 ADD CONSTRAINT fk_deptemp FOREIGN KEY (dept_no) REFERENCES dept_emp(dept_no);
+
+--dept_manager fix key and add foreign key
+ALTER TABLE dept_manager DROP CONSTRAINT dept_manager_pkey;
+
+CREATE UNIQUE INDEX dept_manager ON dept_manager(emp_no)
+
+ALTER TABLE  dept_manager
+  ADD CONSTRAINT dept_manager_pkey2
+    PRIMARY KEY (emp_no)
+ALTER TABLE dept_manager ADD PRIMARY KEY emp_no
+
+ALTER TABLE dept_manager
+    ADD CONSTRAINT fk_dept_mgrs FOREIGN KEY (dept_no) REFERENCES departments (dept_no);
+
+ALTER TABLE dept_emp
+    ADD CONSTRAINT fk_dept_emp FOREIGN KEY (dept_no) REFERENCES departments (dept_no);
+	
+--OK TABLES ALL FIXED LETS WRITE SOME QUERIES
+
+--1. List the following details of each employee: employee number, last name, first name, gender, and salary.
+Select 
+emp.emp_no as "employee number"
+,emp.last_name as "last name"
+,emp.first_name as "first name"
+,emp.gender as gender
+,sal.salary as salary
+from employees emp  --300,024 employees
+left join salaries sal on emp.emp_no = sal.emp_no 
+--2. List employees who were hired in 1986.
+Select 
+emp.emp_no as "employee number"
+,emp.last_name as "last name"
+,emp.first_name as "first name"
+,emp.gender as gender
+,emp.hire_date
+from employees emp  --300,024 employees
+Where emp.hire_date >= '1986-01-01'
+and emp.hire_date <= '1986-12-31'
+--3. List the manager of each department with the following information: department number, 
+--department name, the manager's employee number, last name, first name, and start and end employment dates.
+
+--Frpm dept_emp for each employee get the maximum to date for each employee
+Create temp table emp_max_date
+(emp_no integer, max_to_date date);
+Insert into emp_max_date (emp_no, max_to_date)
+Select emp_no,max(to_date) as max_to_date
+from dept_emp
+group by emp_no;
+
+
+Select dep.dept_no, dep.dept_name, depmgr.emp_no as "Managers emp number", emp.last_name, emp.first_name, 
+emp.hire_date as "start employment date", depemp.max_to_date as "end employment date",
+depmgr.to_date
+From departments dep
+Inner Join dept_manager depmgr on dep.dept_no = depmgr.dept_no
+Inner Join employees emp on emp.emp_no = depmgr.emp_no
+Inner Join emp_max_date depemp on depemp.emp_no=depmgr.emp_no
+
+
+--4. List the department of each employee with the following information: employee number, last name, 
+--first name, and department name.
+Select emp.emp_no, emp.last_name, emp.first_name, de.dept_no, dep.dept_name
+from employees emp
+Inner Join emp_max_date depemp on depemp.emp_no=emp.emp_no
+inner join dept_emp de on de.emp_no = emp.emp_no and de.to_date = depemp.max_to_date
+inner join departments dep on dep.dept_no = de.dept_no
+
+--5. List all employees whose first name is "Hercules" and last names begin with "B."
+Select * from employees emp
+where first_name = 'Hercules'
+and left(last_name,1) = 'B'
+--6. List all employees in the Sales department, including their employee number, last name, first name, and department name.
+Select emp.emp_no, emp.last_name, emp.first_name, dep.dept_name
+from employees emp
+Inner Join emp_max_date depemp on depemp.emp_no=emp.emp_no
+inner join dept_emp de on de.emp_no = emp.emp_no and de.to_date = depemp.max_to_date
+inner join departments dep on dep.dept_no = de.dept_no
+where dep.dept_name = 'Sales'
+
+
+--7. List all employees in the Sales and Development departments, 
+--including their employee number, last name, first name, and department name.
+Select emp.emp_no, emp.last_name, emp.first_name, dep.dept_name
+from employees emp
+Inner Join emp_max_date depemp on depemp.emp_no=emp.emp_no
+inner join dept_emp de on de.emp_no = emp.emp_no and de.to_date = depemp.max_to_date
+inner join departments dep on dep.dept_no = de.dept_no
+where dep.dept_name in ('Sales', 'Development')
+
+--8. In descending order, list the frequency count of employee last names, 
+--i.e., how many employees share each last name.
+select last_name, count(*) count_of_last_name from employees
+group by last_name order by 2 desc
+
+
+
+
