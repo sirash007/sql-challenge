@@ -79,7 +79,7 @@ TABLESPACE pg_default;
 ALTER TABLE public.salaries
 OWNER to postgres;
 
-COPY salaries(emp_no, salary, from_date, to_date) 
+COPY salaries2(emp_no, salary, from_date, to_date) 
 FROM '/Users/ashwinpatel/salaries.csv' DELIMITER ',' CSV HEADER;
 --Salaries table end
 Select * from salaries
@@ -102,10 +102,11 @@ TABLESPACE pg_default;
 ALTER TABLE public.titles
 OWNER to postgres;
 
-COPY titles(emp_no, title, from_date, to_date) 
+COPY titles2(emp_no, title, from_date, to_date) 
 FROM '/Users/ashwinpatel/titles.csv' DELIMITER ',' CSV HEADER;
 --Salaries table end
-Select * from titles
+Select count(*) from titles2
+Select count(*) from titles
 
 --add foreign keys
 ALTER TABLE dept_emp 
@@ -126,9 +127,16 @@ ALTER TABLE dept_manager
 
 ALTER TABLE dept_emp
     ADD CONSTRAINT fk_dept_emp FOREIGN KEY (dept_no) REFERENCES departments (dept_no);
-	
---OK TABLES ALL FIXED LETS WRITE SOME QUERIES
 
+ALTER TABLE dept_emp DROP CONSTRAINT 	dept_emp_pkey;
+
+ALTER TABLE dept_emp
+    ADD CONSTRAINT fk_emp_tbl FOREIGN KEY (emp_no) REFERENCES employees (emp_no);
+
+ALTER TABLE dept_manager DROP CONSTRAINT 	dept_manager_pkey2;
+
+ALTER TABLE dept_manager
+    ADD CONSTRAINT fk_emp2_tbl FOREIGN KEY (emp_no) REFERENCES employees (emp_no);
 --1. List the following details of each employee: employee number, last name, first name, gender, and salary.
 Select 
 emp.emp_no as "employee number"
@@ -206,4 +214,28 @@ group by last_name order by 2 desc
 
 
 
+select * from information_schema.tables
+where table_schema = 'public'
 
+COPY (
+select table_schema,
+       table_name,
+       ordinal_position as position,
+       column_name,
+       data_type,
+       case when character_maximum_length is not null
+            then character_maximum_length
+            else numeric_precision end as max_length,
+       is_nullable,
+       column_default as default_value
+from information_schema.columns
+where table_schema not in ('information_schema', 'pg_catalog')
+order by table_schema, 
+         table_name,
+         ordinal_position
+)
+TO
+'postgresoutput.csv' DELIMITER ',' CSV HEADER;
+		 
+		 
+COPY (SELECT * FROM tracks WHERE genre_id = 6) TO '/Users/dave/Downblues_tracks.csv' DELIMITER ',' CSV HEADER;
